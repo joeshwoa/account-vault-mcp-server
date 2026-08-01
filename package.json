@@ -1,0 +1,36 @@
+{
+  "name": "account-vault-mcp-server",
+  "version": "1.0.0",
+  "description": "Local MCP server that holds many logged-in accounts (Gmail to start) and lets any MCP client (Claude, Cursor, etc.) pick the right one per request — no logout/login switching required.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "vault": "tsx src/cli.ts",
+    "test:smoke": "node dist/smoke-test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "overrides": {
+    "google-auth-library": "^11.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "google-auth-library": "^11.0.0",
+    "googleapis": "^173.0.0",
+    "open": "^11.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
+  }
+}
