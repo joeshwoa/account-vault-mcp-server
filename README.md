@@ -9,6 +9,17 @@ logout/login switching, ever again.
 It runs entirely on your machine. Nothing is hosted, nothing but Google ever sees your
 tokens, and this README tells you exactly where they're stored.
 
+## Quick install
+
+**Not a developer, or just want the easy path?** Open [`AI_SETUP_PROMPT.md`](./AI_SETUP_PROMPT.md),
+copy everything in it, and paste it as a message to an AI coding assistant that can run
+terminal commands on your Mac — Claude Code, Cursor, or similar. It walks through
+installing, connecting your MCP app, and adding your Gmail accounts, pausing to check with
+you at every step that needs a decision or your credentials.
+
+**Prefer doing it by hand?** Keep reading — everything below is the same steps, typed by
+you instead of an AI.
+
 ## How this actually works (read this before you rely on it)
 
 You asked for something that works like a **wallet** — log an account in once, and it's
@@ -174,15 +185,27 @@ server changes per client.
 
 ## Using it
 
-Once connected, just talk naturally — the model reads the account labels via
-`vault_list_accounts` and figures out which one you mean:
+No new commands to learn — once it's connected, just talk to Claude/Cursor/whatever app
+you wired it into, the same way you'd talk about anything else. It figures out which
+account you mean from context, and asks if it's genuinely unsure.
 
-- "Check my work inbox for anything unread from finance"
+Things you can say:
+
+- "What's in my personal Gmail unread right now?"
+- "Check my work inbox for anything from finance"
 - "Search my personal Gmail for that flight confirmation from last week"
-- "Draft a reply in my work account to the thread about the Q3 budget"
+- "Draft a reply in my work account to the thread about the Q3 budget" (it'll create the
+  draft and tell you it's waiting in Gmail for you to review and send — it never sends on
+  its own)
+- "What Gmail accounts do I have connected?" (this calls `vault_list_accounts` directly)
+- "Archive that email" / "mark it read" / "star it" (once you've looked at a message
+  together)
 
-If you have more than one Gmail account configured and don't say which one, the model
-will ask (or call `vault_list_accounts` first) rather than guessing.
+If you have more than one Gmail account configured and don't say which one, it will ask
+(or check `vault_list_accounts` itself) instead of guessing and picking the wrong inbox.
+
+**It will never send an email for you.** Every write action is a draft — search, reading,
+labels, and drafts are the only things it can touch. You always send from Gmail yourself.
 
 ## Tools reference
 
@@ -217,6 +240,41 @@ Google Calendar, Notion, Slack, or anything else:
    the CLI's `add`/`list`/`remove` commands, and every connected MCP client pick it up
    automatically, with no other code touched.
 5. `npm run build`, then `node dist/cli.js config <service> ...` and `add` as usual.
+
+## Publish this on GitHub
+
+This folder is already a git repository with an initial commit — `node_modules/`, `dist/`,
+and your account data/OAuth secrets (`data/*.json`) are all git-ignored, so nothing
+sensitive is in the commit. Publishing it is one command if you have the
+[GitHub CLI](https://cli.github.com) installed:
+
+```bash
+cd /Volumes/PortableSSD/MCP/account-vault-mcp-server
+gh auth login          # one-time, opens your browser — skip if already logged in
+gh repo create account-vault-mcp-server --source=. --remote=origin --push --private
+```
+
+Use `--public` instead of `--private` if you want it open. That's it — `gh` creates the
+repository on your GitHub account and pushes this commit in one step.
+
+No `gh` installed, or don't want to use a terminal at all? Two other options:
+
+- Install it first: `brew install gh` (if you have Homebrew), then run the block above.
+- Fully manual: create a new, **empty** repository at [github.com/new](https://github.com/new)
+  (don't check "Add a README" — this folder already has one), then run:
+  ```bash
+  cd /Volumes/PortableSSD/MCP/account-vault-mcp-server
+  git remote add origin <the URL GitHub gives you>
+  git push -u origin main
+  ```
+
+`AI_SETUP_PROMPT.md` step 9 also covers this if you'd rather have an AI assistant drive it
+interactively with you.
+
+**Why I couldn't just do this step for you:** publishing needs your GitHub credentials,
+and I intentionally don't have a way to take those from you in chat — pasting a token here
+would be a real way to leak it. Everything up to the push is already done for you either
+way.
 
 ## Troubleshooting
 
