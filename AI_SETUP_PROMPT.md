@@ -19,7 +19,9 @@ Please work through this step by step, and stop to check with me before anything
 needs a decision or my credentials — don't run ahead on your own.
 
 1. Find the "account-vault-mcp-server" folder (ask me for its path if you can't locate
-   it). Open and read its README.md fully before doing anything else.
+   it). If it isn't on this computer yet, clone it first:
+   `git clone https://github.com/joeshwoa/account-vault-mcp-server.git`
+   Open and read its README.md fully before doing anything else.
 
 2. In that folder, run `npm install` then `npm run build`. Show me the output and confirm
    there are no errors before continuing.

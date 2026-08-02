@@ -1,5 +1,7 @@
 # account-vault-mcp-server
 
+**Repo:** https://github.com/joeshwoa/account-vault-mcp-server
+
 Claude's (and ChatGPT's, and every other app's) built-in Gmail connector holds exactly one
 Google account at a time — connecting a second one logs the first one out. This is a local
 MCP server that fixes that: it holds **many** logged-in accounts at once and lets any MCP
@@ -61,16 +63,22 @@ implementation the pattern is proven against.
 
 ## One-time setup
 
-### 0. Already done for you
+### 0. Get the code built
 
-`npm install` and `npm run build` have already been run in this folder — `dist/` is ready
-to go. If you ever move this folder, or change the source, re-run:
+Already have this exact folder (e.g. this is Joshua's original copy on the portable
+SSD)? `npm install` and `npm run build` have already been run — `dist/` is ready to go,
+skip to step 1.
+
+Starting fresh from GitHub instead (a different machine, or someone else trying this)?
 
 ```bash
-cd /Volumes/PortableSSD/MCP/account-vault-mcp-server
+git clone https://github.com/joeshwoa/account-vault-mcp-server.git
+cd account-vault-mcp-server
 npm install
 npm run build
 ```
+
+Either way, if you ever change the source or pull updates, re-run `npm install && npm run build`.
 
 ### 1. Create a Google OAuth client (one-time, reused for every Gmail account you add)
 

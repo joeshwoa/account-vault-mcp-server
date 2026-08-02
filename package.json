@@ -18,9 +18,17 @@
   "overrides": {
     "google-auth-library": "^11.0.0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joeshwoa/account-vault-mcp-server.git"
+  },
+  "homepage": "https://github.com/joeshwoa/account-vault-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/joeshwoa/account-vault-mcp-server/issues"
+  },
+  "keywords": ["mcp", "model-context-protocol", "gmail", "oauth", "multi-account", "claude", "cursor"],
+  "author": "Joshua",
+  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
     "google-auth-library": "^11.0.0",
