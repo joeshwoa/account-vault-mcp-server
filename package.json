@@ -10,6 +10,7 @@
     "build": "tsc",
     "clean": "rm -rf dist",
     "vault": "tsx src/cli.ts",
+    "panel": "node dist/web/server.js",
     "test:smoke": "node dist/smoke-test.js"
   },
   "engines": {

@@ -3,9 +3,16 @@ import { createServer } from "node:http";
 import { stdin as input, stdout as output } from "node:process";
 import open from "open";
 import { adapters } from "./adapters/index.js";
-import { readAccounts, upsertAccount, removeAccount, readConfig, writeConfig } from "./vault/store.js";
-import { keychainSet, keychainDelete, assertMacKeychainSupport } from "./vault/keychain.js";
+import { readAccounts } from "./vault/store.js";
+import { assertMacKeychainSupport } from "./vault/keychain.js";
 import { checkForUpdates, applyUpdate } from "./vault/update.js";
+import {
+  getOAuth2ClientConfig,
+  saveOAuth2ClientConfig,
+  storeOAuth2Account,
+  storeApiKeyAccount,
+  deleteAccount,
+} from "./vault/accounts.js";
 import type { Adapter, OAuth2AuthHooks, ApiKeyAuthHooks } from "./types.js";
 
 const REDIRECT_PORT = 8765;
@@ -135,15 +142,12 @@ async function cmdConfig(service: string, clientId: string, clientSecret: string
         `Just run: node dist/cli.js add ${service} <label>`
     );
   }
-  const config = await readConfig();
-  config.oauthClients[service] = { clientId, clientSecret };
-  await writeConfig(config);
+  await saveOAuth2ClientConfig(service, clientId, clientSecret);
   console.log(`Saved the OAuth client for "${service}". This is one-time per service — now run "add" for each account.`);
 }
 
 async function addOAuth2Account(auth: OAuth2AuthHooks, service: string, displayName: string, label: string): Promise<void> {
-  const config = await readConfig();
-  const clientCfg = config.oauthClients[service];
+  const clientCfg = await getOAuth2ClientConfig(service);
   if (!clientCfg) {
     throw new Error(
       `No OAuth client configured for "${service}" yet. Run:\n` +
@@ -168,43 +172,21 @@ async function addOAuth2Account(auth: OAuth2AuthHooks, service: string, displayN
 
   const { tokens } = await client.getToken(code);
   client.setCredentials(tokens);
-  const secret = auth.toSecret(tokens);
-  const resolvedDisplayName = await auth.fetchDisplayName(client);
-
-  await keychainSet(service, label, JSON.stringify(secret));
-  await upsertAccount({
-    service,
-    label,
-    displayName: resolvedDisplayName,
-    scopes: auth.scopes,
-    addedAt: new Date().toISOString(),
-  });
+  const record = await storeOAuth2Account(auth, service, label, tokens, client);
 
   console.log(
-    `\nDone. "${label}" -> ${resolvedDisplayName} is now available to every MCP client using this vault — no further login needed.`
+    `\nDone. "${label}" -> ${record.displayName} is now available to every MCP client using this vault — no further login needed.`
   );
 }
 
 async function addApiKeyAccount(auth: ApiKeyAuthHooks, service: string, displayName: string, label: string): Promise<void> {
   console.log(`Setting up "${label}" (${displayName}). Values you paste here are stored only in the macOS Keychain.`);
   const values = await promptAllFields(auth.fields);
-  const secret = auth.toSecret(values);
 
   console.log("Verifying credentials...");
-  const resolvedDisplayName = await auth.verifyAndFetchDisplayName(secret);
+  const record = await storeApiKeyAccount(auth, service, label, values);
 
-  await keychainSet(service, label, JSON.stringify(secret));
-  await upsertAccount({
-    service,
-    label,
-    displayName: resolvedDisplayName,
-    scopes: [],
-    addedAt: new Date().toISOString(),
-  });
-
-  console.log(
-    `\nDone. "${label}" -> ${resolvedDisplayName} is now available to every MCP client using this vault.`
-  );
+  console.log(`\nDone. "${label}" -> ${record.displayName} is now available to every MCP client using this vault.`);
 }
 
 async function cmdAdd(service: string, label: string): Promise<void> {
@@ -229,8 +211,7 @@ async function cmdList(): Promise<void> {
 }
 
 async function cmdRemove(service: string, label: string): Promise<void> {
-  const removed = await removeAccount(service, label);
-  await keychainDelete(service, label);
+  const removed = await deleteAccount(service, label);
   console.log(removed ? `Removed ${service}:${label}.` : `No such account: ${service}:${label}.`);
 }
 

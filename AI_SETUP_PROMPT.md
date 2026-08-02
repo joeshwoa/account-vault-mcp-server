@@ -38,22 +38,19 @@ needs a decision or my credentials — don't run ahead on your own.
    Google account and I need to click through it myself. Never ask me for a password —
    only the Client ID and Client Secret at the very end of that process.
 
-5. Once I have a Client ID and Secret, run:
-   `node dist/cli.js config gmail <the client id> <the client secret>`
+5. Run `npm run panel`. This opens a page in my browser at http://127.0.0.1:4790 — from
+   here, hand off to me directly: I'll paste the Client ID/Secret into the page myself,
+   then click "Connect Gmail" to log into each account I want (I can add more than one,
+   one at a time). Wait for me to say I've added at least one account before continuing —
+   don't try to do this part for me, it needs my own browser sign-in.
 
-6. Ask me what to call my first account (e.g. "personal" or "work"), then run:
-   `node dist/cli.js add gmail <that label>`
-   This opens my browser to log into Google — wait for me to say I've finished before
-   continuing. Then run `node dist/cli.js list` and show me the result so I can confirm it
-   worked. Repeat for every other account I want to add.
-
-7. Tell me to fully quit and reopen the app from step 3 (Claude Desktop / Cursor) — or for
+6. Tell me to fully quit and reopen the app from step 3 (Claude Desktop / Cursor) — or for
    Claude Code, run `claude mcp list` to confirm the server shows up there instead.
 
-8. Ask me to test it by typing "list my configured vault accounts" in that app, and
+7. Ask me to test it by typing "list my configured vault accounts" in that app, and
    confirm the account(s) I added show up in the response.
 
-9. Optional — only if I ask you to publish this to GitHub: check whether the `gh` command
+8. Optional — only if I ask you to publish this to GitHub: check whether the `gh` command
    is installed (`gh --version`). If it isn't, tell me to install it (`brew install gh` on
    a Mac with Homebrew, or point me to https://cli.github.com) and stop until I confirm
    it's installed. Then run `gh auth login` and let me complete that login myself in the

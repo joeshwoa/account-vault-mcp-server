@@ -24,8 +24,12 @@ terminal commands on your Mac — Claude Code, Cursor, or similar. It walks thro
 installing, connecting your MCP app, and adding your Gmail accounts, pausing to check with
 you at every step that needs a decision or your credentials.
 
+**Already installed, just want to add or manage accounts?** Run `npm run panel` — it opens
+a page in your browser where you connect/remove accounts and copy MCP config snippets, no
+terminal commands needed after that. See [Local control panel](#local-control-panel).
+
 **Prefer doing it by hand?** Keep reading — everything below is the same steps, typed by
-you instead of an AI.
+you instead of an AI, using the command line instead of the web page.
 
 ## How this actually works (read this before you rely on it)
 
@@ -145,6 +149,10 @@ You only do this once — the same client ID/secret works for unlimited Gmail ac
 
 ### 2. Save the OAuth client, then log in each account
 
+Easiest: skip everything below and run `npm run panel` instead — see
+[Local control panel](#local-control-panel). What follows is the command-line version of
+the same thing.
+
 From this folder:
 
 ```bash
@@ -168,6 +176,33 @@ Check what's configured any time with:
 ```bash
 node dist/cli.js list
 ```
+
+## Local control panel
+
+```bash
+npm run panel
+```
+
+Starts a small web page at `http://127.0.0.1:4790` (only reachable from this computer —
+never exposed to your network) and opens it in your browser automatically. From there you
+can, without touching a terminal again:
+
+- Paste your Google OAuth Client ID/Secret (the one-time step from above), for Gmail or
+  any future OAuth2 adapter.
+- Connect a Gmail account — click "Connect Gmail," give it a label, and it sends you
+  through the normal Google sign-in in your browser, then brings you back with the
+  account added.
+- Add an account for any API-key-based adapter — a plain form for whatever fields that
+  service needs.
+- See every account currently configured, and remove any of them.
+- Check for and apply updates from GitHub with one click.
+- Copy the exact MCP config snippet for Claude Desktop, Claude Code, or Cursor, with the
+  real path to this folder already filled in.
+
+It's built on the same underlying functions as the CLI (`node dist/cli.js ...`) — nothing
+it does is different from, or less safe than, running those commands by hand. Close the
+terminal window/tab running it (or Ctrl+C) when you're done; it doesn't need to stay
+running for the MCP server itself to work.
 
 ## Connect it to your MCP client(s)
 
@@ -195,7 +230,11 @@ rather than replacing the file:
 }
 ```
 
-Restart Claude Desktop afterward.
+Restart Claude Desktop afterward. To confirm it connected: start a new chat and click the
+tools/hammer icon near the message box — `account-vault-mcp-server`'s tools
+(`vault_list_accounts`, `gmail_search_messages`, etc.) should be listed there. (That
+config file also lives under Settings -> Developer -> Edit Config if you'd rather get
+there through the UI than find the file yourself.)
 
 ### Claude Code
 
@@ -400,6 +439,9 @@ code.
   access for your app, then run `add` again.
 - **"Port 8765 is already in use"** (during `add`) — something else is using that port;
   close it and retry, or change `REDIRECT_PORT` in `src/cli.ts` and rebuild.
+- **The control panel won't start / port 4790 in use** — something else is already using
+  that port (maybe you already have the panel open in another tab/window — check there
+  first). Close whatever's using it, or change `PORT` in `src/web/server.ts` and rebuild.
 - **Running on something other than macOS** — this build refuses to start because it
   relies on the macOS Keychain (`src/vault/keychain.ts`). To run elsewhere, swap that
   module for a different secret store (e.g. an OS-appropriate credential manager, or an
