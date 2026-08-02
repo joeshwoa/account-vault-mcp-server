@@ -18,18 +18,21 @@ tokens, and this README tells you exactly where they're stored.
 
 ## Quick install
 
-**Not a developer, or just want the easy path?** Open [`AI_SETUP_PROMPT.md`](./AI_SETUP_PROMPT.md),
-copy everything in it, and paste it as a message to an AI coding assistant that can run
-terminal commands on your Mac — Claude Code, Cursor, or similar. It walks through
-installing, connecting your MCP app, and adding your Gmail accounts, pausing to check with
-you at every step that needs a decision or your credentials.
+**Already installed? The easiest way, zero typing, ever:** double-click
+**`Open Account Vault.command`**, the file sitting right in this folder. It opens the
+control panel in your browser. That's the whole interaction. (The very first time, macOS
+may warn "unidentified developer" since you made this file yourself — right-click it and
+choose **Open** once instead of double-clicking, confirm, and it'll open normally every
+time after that.)
 
-**Already installed, just want to add or manage accounts?** Run `npm run panel` — it opens
-a page in your browser where you connect/remove accounts and copy MCP config snippets, no
-terminal commands needed after that. See [Local control panel](#local-control-panel).
+**Not installed yet, and would rather an AI handle that part too?** Open
+[`AI_SETUP_PROMPT.md`](./AI_SETUP_PROMPT.md), copy everything in it, and paste it as a
+message to an AI coding assistant that can run terminal commands on your Mac — Claude
+Code, Cursor, or similar. It installs everything, wires it into your AI app, then hands
+you off to the same double-click panel above for the account part.
 
-**Prefer doing it by hand?** Keep reading — everything below is the same steps, typed by
-you instead of an AI, using the command line instead of the web page.
+**Prefer doing it all by hand?** Keep reading — everything below is the same steps typed
+by you, using the command line instead of double-clicking.
 
 ## How this actually works (read this before you rely on it)
 
@@ -179,11 +182,13 @@ node dist/cli.js list
 
 ## Local control panel
 
+Double-click **`Open Account Vault.command`** in this folder. Or, from a terminal:
+
 ```bash
 npm run panel
 ```
 
-Starts a small web page at `http://127.0.0.1:4790` (only reachable from this computer —
+Either way, this starts a small web page at `http://127.0.0.1:4790` (only reachable from this computer —
 never exposed to your network) and opens it in your browser automatically. From there you
 can, without touching a terminal again:
 
