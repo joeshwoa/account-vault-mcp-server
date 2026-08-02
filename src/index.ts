@@ -5,6 +5,7 @@ import { z } from "zod";
 import { adapters } from "./adapters/index.js";
 import { createToolContext } from "./vault/context.js";
 import { assertMacKeychainSupport } from "./vault/keychain.js";
+import { checkForUpdates } from "./vault/update.js";
 
 const server = new McpServer({
   name: "account-vault-mcp-server",
@@ -85,6 +86,18 @@ async function main() {
     `account-vault-mcp-server running (stdio) — ${adapters.length} connector(s) loaded: ` +
       adapters.map((a) => a.service).join(", ")
   );
+
+  // Best-effort, non-blocking, read-only version check — never delays startup, never applies
+  // anything on its own. Just a heads-up printed to stderr; `node dist/cli.js update` applies it.
+  void checkForUpdates()
+    .then((status) => {
+      if (status.checkFailed || status.upToDate) return;
+      const behind = status.behindBy ? ` (${status.behindBy} commit${status.behindBy === 1 ? "" : "s"} behind)` : "";
+      console.error(
+        `[account-vault-mcp-server] Update available${behind} on GitHub — run "node dist/cli.js update" to get it.`
+      );
+    })
+    .catch(() => {});
 }
 
 main().catch((error) => {

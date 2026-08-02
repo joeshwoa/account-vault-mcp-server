@@ -7,7 +7,7 @@ import { gmailTools } from "./tools.js";
 export const gmailAdapter: Adapter = {
   service: "gmail",
   displayName: "Gmail",
-  oauth: {
+  auth: {
     kind: "oauth2",
     scopes: GMAIL_SCOPES,
     createClient(clientId, clientSecret, redirectUri) {

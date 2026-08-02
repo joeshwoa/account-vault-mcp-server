@@ -10,7 +10,7 @@ export interface AccountRecord {
   addedAt: string;
 }
 
-/** Secret credential blob for one account (tokens, etc.) — shape is adapter-specific. Lives in the macOS Keychain, never on disk. */
+/** Secret credential blob for one account (tokens, API keys, etc.) — shape is adapter-specific. Lives in the macOS Keychain, never on disk. */
 export type SecretBlob = Record<string, unknown>;
 
 /** Re-export of the SDK's own result type so every handler is guaranteed structurally compatible with registerTool. */
@@ -25,7 +25,7 @@ export interface ToolContext {
    * Throws a descriptive, model-safe error otherwise (no accounts / ambiguous / unknown label).
    */
   requireAccount(service: string, label?: string): Promise<AccountRecord>;
-  /** Load the secret blob (tokens, etc.) for an account from the Keychain. */
+  /** Load the secret blob (tokens, API key, etc.) for an account from the Keychain. */
   loadSecret(service: string, label: string): Promise<SecretBlob>;
   /** Persist an updated secret blob (e.g. after a token refresh) back to the Keychain. */
   saveSecret(service: string, label: string, secret: SecretBlob): Promise<void>;
@@ -55,13 +55,17 @@ export interface ToolDef {
   handler: (args: any, ctx: ToolContext) => Promise<ToolResult>;
 }
 
-/** Hooks an adapter implements to support the OAuth2 "add account" flow in src/cli.ts. */
-export interface OAuthAdapterHooks {
+/**
+ * Hooks an adapter implements for a browser-based OAuth2 "add account" flow (src/cli.ts).
+ * Use this for any service where accounts are added by signing in through a browser
+ * consent screen — Google services, and most other modern SaaS APIs.
+ */
+export interface OAuth2AuthHooks {
   kind: "oauth2";
   /** Scopes requested during the consent screen. */
   scopes: string[];
   createClient(clientId: string, clientSecret: string, redirectUri: string): OAuth2Client;
-  /** Turn the token response from Google into this adapter's SecretBlob shape. */
+  /** Turn the token response from the provider into this adapter's SecretBlob shape. */
   toSecret(tokens: {
     refresh_token?: string | null;
     access_token?: string | null;
@@ -71,11 +75,41 @@ export interface OAuthAdapterHooks {
   fetchDisplayName(client: OAuth2Client): Promise<string>;
 }
 
+/**
+ * Hooks an adapter implements for a static-credential "add account" flow (src/cli.ts) —
+ * for services authenticated with an API key, personal access token, project URL + key
+ * pair, etc. instead of a browser OAuth dance. No app-level "config" step is needed for
+ * these; each account's credentials are self-contained.
+ */
+export interface ApiKeyAuthHooks {
+  kind: "apikey";
+  /** Fields the CLI prompts for when adding an account, in order. */
+  fields: Array<{
+    /** Key used in the `values` object passed to toSecret/verifyAndFetchDisplayName. */
+    name: string;
+    /** Prompt text shown to the user. */
+    label: string;
+    /** Mask input on the terminal (for API keys, tokens, secrets). */
+    secret?: boolean;
+  }>;
+  /** Turn the raw field values the user typed into this adapter's SecretBlob shape. */
+  toSecret(values: Record<string, string>): SecretBlob;
+  /**
+   * Verify the credentials actually work (e.g. one lightweight API call) and resolve a
+   * human-readable identity for vault_list_accounts (e.g. a project or workspace name).
+   * Throw a clear error if verification fails — this is the only feedback a non-technical
+   * user gets that they mistyped something.
+   */
+  verifyAndFetchDisplayName(secret: SecretBlob): Promise<string>;
+}
+
+export type AuthHooks = OAuth2AuthHooks | ApiKeyAuthHooks;
+
 /** A connector: a set of tools plus the auth flow needed to log an account into it. */
 export interface Adapter {
   /** Short id used as the tool-name prefix and the `service` value everywhere, e.g. "gmail". */
   service: string;
   displayName: string;
-  oauth: OAuthAdapterHooks;
+  auth: AuthHooks;
   tools: ToolDef[];
 }

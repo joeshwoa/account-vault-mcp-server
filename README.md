@@ -5,8 +5,13 @@
 Claude's (and ChatGPT's, and every other app's) built-in Gmail connector holds exactly one
 Google account at a time — connecting a second one logs the first one out. This is a local
 MCP server that fixes that: it holds **many** logged-in accounts at once and lets any MCP
-client (Claude Desktop, Claude Code, Cursor, ...) pick the right one per request, with no
-logout/login switching, ever again.
+client pick the right one per request, with no logout/login switching, ever again.
+
+This is a plain [Model Context Protocol](https://modelcontextprotocol.io) server talking
+stdio — nothing in it is specific to any one app. It works identically in **Claude
+Desktop, Claude Code, Cursor, Windsurf, Cline, Continue, VS Code's MCP support, or any
+other MCP-compatible client or agent**, including ones not listed here, since MCP is an
+open standard, not a Claude or Cursor feature.
 
 It runs entirely on your machine. Nothing is hosted, nothing but Google ever sees your
 tokens, and this README tells you exactly where they're stored.
@@ -40,6 +45,40 @@ rewriting code. Here's exactly how much of that is true, and where the real limi
 
 This ships with one adapter built and fully tested: **Gmail**. It's built as the reference
 implementation the pattern is proven against.
+
+## Not Google-only, and not a replacement for your other MCP connectors
+
+Two things worth being precise about:
+
+**It's not Google/OAuth-specific.** The adapter interface (`src/types.ts`) supports two
+kinds of login: a browser OAuth2 flow (what Gmail uses) and a static API-key flow — paste
+a token/key once, no browser involved — for services like Supabase, most SaaS APIs, or
+anything else that authenticates with an API key instead of an OAuth dance. See
+[Adding a new connector](#adding-a-new-connector) for a complete worked example of the
+API-key style.
+
+**It doesn't replace, duplicate, or touch your other MCP connectors** — the official
+Gmail connector, Supabase's own MCP, or anything else you already have connected. This
+server's tools live under their own names (`gmail_search_messages`, not whatever the
+official Gmail connector calls its search tool), so it sits alongside what you already
+use rather than competing with it.
+
+One important, honest limit: **this vault cannot make an already-existing MCP connector
+(the official Gmail connector, Supabase's official MCP, etc.) switch which account *it*
+is using.** Those run as hosted services — their credentials live server-side with
+Anthropic, or with Supabase, with no local hook for anything (this tool included) to
+reach in and swap. That's an access boundary, not a missing feature — no locally-run tool
+could do that for a hosted connector, by design, since allowing it would be a security
+hole. What this vault gives you instead is a *second, independent* way to reach the same
+kind of account (Gmail today), one that was built from the ground up to hold many
+accounts and switch between them live, with its own tools, no restart, no re-auth. For a
+connector you self-host and run as a local process yourself (rather than through Claude's
+hosted connector settings), a credential-switching proxy in front of it is *sometimes*
+possible depending on how that specific server reads its credentials — but it's a
+per-server integration, not something generic, and most self-hosted MCP servers cache
+their credentials at startup, so even that path usually needs a reconnect rather than a
+truly live mid-conversation switch. If you have a specific self-hosted server in mind,
+say which one and that's a real, scoped thing to look into.
 
 ## Security notes
 
@@ -233,21 +272,70 @@ labels, and drafts are the only things it can touch. You always send from Gmail 
 ## Adding a new connector
 
 The vault core (`src/vault/`), the CLI (`src/cli.ts`), and `src/index.ts` are all generic
-— they loop over whatever's in `src/adapters/index.ts` and never need to change. To add
-Google Calendar, Notion, Slack, or anything else:
+— they loop over whatever's in `src/adapters/index.ts` and switch on each adapter's
+`auth.kind`, and never need to change. Every adapter picks one of two login styles:
+
+- **`oauth2`** — a browser sign-in + consent screen (what Gmail uses). Right for Google
+  services, and most other modern SaaS APIs (Slack, Notion, etc.).
+- **`apikey`** — paste a token/key once, no browser involved. Right for services like
+  Supabase, or anything else authenticated with an API key or personal access token.
+
+To add one:
 
 1. Copy `src/adapters/gmail/` to `src/adapters/<service>/` as a starting template.
-2. In `adapter.ts`, implement the `oauth` hooks (`createClient`, `toSecret`,
-   `fetchDisplayName`) for the new service's OAuth flow — Google services can mostly reuse
-   the same pattern; other providers just need their own token endpoint wired into
-   `google-auth-library`'s `OAuth2Client`-equivalent, or a different `google-auth-library`
-   client entirely if it's not a Google API.
+2. In `adapter.ts`, implement `auth` for whichever kind fits the service (see the
+   `OAuth2AuthHooks` / `ApiKeyAuthHooks` types in `src/types.ts`, and the example below).
 3. In `tools.ts`, write the MCP tools you want (search, read, write, whatever the service
    needs), following the `ToolDef` shape in `src/types.ts`.
-4. Add the new adapter to the array in `src/adapters/index.ts`. That's it — `vault_list_accounts`,
-   the CLI's `add`/`list`/`remove` commands, and every connected MCP client pick it up
-   automatically, with no other code touched.
-5. `npm run build`, then `node dist/cli.js config <service> ...` and `add` as usual.
+4. Add the new adapter to the array in `src/adapters/index.ts`. That's it —
+   `vault_list_accounts`, the CLI's `add`/`list`/`remove` commands, and every connected
+   MCP client pick it up automatically, with no other code touched.
+5. `npm run build`. OAuth2 services need `node dist/cli.js config <service> ...` once
+   first; API-key services skip straight to `add`.
+
+### Worked example: an API-key adapter
+
+This is the entire `auth` block for a hypothetical API-key-based service — no browser
+flow, no app-level `config` step:
+
+```ts
+// src/adapters/example-service/adapter.ts
+import type { Adapter, ApiKeyAuthHooks } from "../../types.js";
+import { exampleServiceTools } from "./tools.js";
+
+const auth: ApiKeyAuthHooks = {
+  kind: "apikey",
+  fields: [
+    { name: "apiKey", label: "API key", secret: true },
+    { name: "projectUrl", label: "Project URL" },
+  ],
+  toSecret(values) {
+    return { apiKey: values.apiKey, projectUrl: values.projectUrl };
+  },
+  async verifyAndFetchDisplayName(secret) {
+    // Make one lightweight authenticated call to confirm the key works, and return
+    // something human-readable (a project/workspace name) for vault_list_accounts.
+    const res = await fetch(`${secret.projectUrl}/whoami`, {
+      headers: { Authorization: `Bearer ${secret.apiKey}` },
+    });
+    if (!res.ok) throw new Error(`Couldn't verify credentials (${res.status}). Check the API key and URL.`);
+    const data = await res.json();
+    return data.projectName ?? String(secret.projectUrl);
+  },
+};
+
+export const exampleServiceAdapter: Adapter = {
+  service: "example-service",
+  displayName: "Example Service",
+  auth,
+  tools: exampleServiceTools,
+};
+```
+
+Running `node dist/cli.js add example-service work` then prompts for **API key** (masked)
+and **Project URL**, verifies them, and stores the result in the Keychain — same
+`vault_list_accounts`, same automatic per-call account switching, same everything else,
+for free.
 
 ## Publish this on GitHub
 
@@ -283,6 +371,23 @@ interactively with you.
 and I intentionally don't have a way to take those from you in chat — pasting a token here
 would be a real way to leak it. Everything up to the push is already done for you either
 way.
+
+## Staying up to date
+
+Every time the server starts, it does one quick, read-only, non-blocking check against
+GitHub (`git ls-remote` — it doesn't download or change anything) and prints a note to
+the logs if a newer version is available. It never updates itself silently; applying an
+update is always something you explicitly run:
+
+```bash
+node dist/cli.js check-update   # just look, changes nothing
+node dist/cli.js update         # pull + npm install + npm run build
+```
+
+`update` only fast-forwards — if you've made local edits (like a custom adapter) it
+refuses instead of overwriting them, and tells you to commit or stash first. After it
+finishes, fully restart your MCP app (or reconnect the server) so it picks up the new
+code.
 
 ## Troubleshooting
 
