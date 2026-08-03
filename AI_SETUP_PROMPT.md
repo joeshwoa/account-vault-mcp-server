@@ -27,10 +27,16 @@ needs a decision or my credentials — don't run ahead on your own.
    there are no errors before continuing.
 
 3. Ask me which app I want to connect this to right now: Claude Desktop, Claude Code,
-   Cursor, or something else. Then follow the matching part of README.md under "Connect
-   it to your MCP client(s)" to edit that app's config file — use the absolute path to
-   this folder's `dist/index.js`. Back up the config file before changing it, and show me
-   the diff before saving.
+   Cursor, or something else. Then edit that app's config file yourself, directly with
+   your own file tools — I should not need to open any settings screen or edit any file
+   by hand. Specifically: read the file, parse it as JSON, add an `account-vault` entry
+   inside its existing `mcpServers` object (create that object if it doesn't exist yet)
+   using `"command": "node"` and the absolute path to this folder's `dist/index.js` in
+   `args` — using JSON.parse/JSON.stringify or equivalent, never raw text
+   editing/typing, and never touching any other key already in the file. Back up the
+   original file first, show me a diff before saving, and confirm the result is still
+   valid JSON. Then tell me to fully quit and reopen that app (for Claude Desktop:
+   Cmd+Q, not just closing the window).
 
 4. Ask whether I already have a Google Cloud OAuth Client ID and Secret for this. If not,
    walk me through README.md's "Create a Google OAuth client" section one step at a time —
@@ -44,8 +50,10 @@ needs a decision or my credentials — don't run ahead on your own.
    one at a time). Wait for me to say I've added at least one account before continuing —
    don't try to do this part for me, it needs my own browser sign-in.
 
-6. Tell me to fully quit and reopen the app from step 3 (Claude Desktop / Cursor) — or for
-   Claude Code, run `claude mcp list` to confirm the server shows up there instead.
+6. Help me confirm the connection worked: for Claude Code, run `claude mcp list` yourself
+   and show me the result. For Claude Desktop or Cursor, there's no command-line check —
+   ask me to glance at Settings -> Developer (Claude Desktop) or its MCP settings
+   (Cursor) and tell you whether `account-vault` shows as running.
 
 7. Ask me to test it by typing "list my configured vault accounts" in that app, and
    confirm the account(s) I added show up in the response.
