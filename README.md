@@ -220,9 +220,15 @@ client. The entry point is:
 
 ### Claude Desktop
 
-Edit (or create) `~/Library/Application Support/Claude/claude_desktop_config.json`. If it
-already has an `mcpServers` block from something else, add `account-vault` alongside it
-rather than replacing the file:
+**Prefer clicking through real screenshots instead of the instructions below?** See
+[`docs/CLAUDE_DESKTOP_SETUP.md`](./docs/CLAUDE_DESKTOP_SETUP.md) — a fully illustrated,
+non-technical-friendly walkthrough, including a real gotcha (TextEdit silently
+capitalizing JSON keys) and how to avoid it.
+
+Edit (or create) `~/Library/Application Support/Claude/claude_desktop_config.json` — or
+get there through the UI via Settings -> Developer -> Edit Config. If it already has an
+`mcpServers` block from something else, add `account-vault` alongside it rather than
+replacing the file:
 
 ```json
 {
@@ -235,11 +241,15 @@ rather than replacing the file:
 }
 ```
 
-Restart Claude Desktop afterward. To confirm it connected: start a new chat and click the
-tools/hammer icon near the message box — `account-vault-mcp-server`'s tools
-(`vault_list_accounts`, `gmail_search_messages`, etc.) should be listed there. (That
-config file also lives under Settings -> Developer -> Edit Config if you'd rather get
-there through the UI than find the file yourself.)
+Fully quit and reopen Claude Desktop afterward. Easiest way to confirm it connected:
+Settings -> Developer should list `account-vault` with a **running** badge next to it.
+(Alternatively: start a new chat and click the tools/hammer icon near the message box —
+`account-vault`'s tools like `vault_list_accounts` should be listed there too.)
+
+If it shows an error instead of "running," it's almost always Claude Desktop not finding
+`node` on its PATH — run `which node` in Terminal and use that full path as `"command"`
+instead of bare `"node"`. See the troubleshooting steps in the illustrated guide above
+for the full walkthrough.
 
 ### Claude Code
 
