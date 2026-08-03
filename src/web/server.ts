@@ -8,8 +8,9 @@ import open from "open";
 import { adapters } from "../adapters/index.js";
 import { readAccounts } from "../vault/store.js";
 import {
-  getOAuth2ClientConfig,
+  resolveOAuth2ClientConfig,
   saveOAuth2ClientConfig,
+  clearOAuth2ClientConfig,
   storeOAuth2Account,
   storeApiKeyAccount,
   deleteAccount,
@@ -75,8 +76,15 @@ async function handleState(res: ServerResponse): Promise<void> {
   const services = await Promise.all(
     adapters.map(async (a) => {
       if (a.auth.kind === "oauth2") {
-        const cfg = await getOAuth2ClientConfig(a.service);
-        return { service: a.service, displayName: a.displayName, authKind: "oauth2" as const, configured: Boolean(cfg) };
+        const resolved = await resolveOAuth2ClientConfig(a.auth, a.service);
+        return {
+          service: a.service,
+          displayName: a.displayName,
+          authKind: "oauth2" as const,
+          configured: Boolean(resolved),
+          clientSource: resolved?.source ?? null, // "user" | "shared-default" | null
+          hasSharedDefault: Boolean(a.auth.defaultClient),
+        };
       }
       return {
         service: a.service,
@@ -109,6 +117,17 @@ async function handleOAuthConfig(req: IncomingMessage, res: ServerResponse): Pro
   sendJson(res, 200, { ok: true });
 }
 
+async function handleOAuthConfigReset(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const body = await readJsonBody(req);
+  const adapter = findAdapter(body.service);
+  if (!adapter || adapter.auth.kind !== "oauth2") {
+    sendJson(res, 400, { ok: false, error: "Unknown or non-OAuth2 service." });
+    return;
+  }
+  await clearOAuth2ClientConfig(adapter.service);
+  sendJson(res, 200, { ok: true, hasSharedDefault: Boolean(adapter.auth.defaultClient) });
+}
+
 async function handleOAuthStart(url: URL, res: ServerResponse): Promise<void> {
   const service = url.searchParams.get("service") ?? "";
   const label = (url.searchParams.get("label") ?? "").trim();
@@ -123,7 +142,7 @@ async function handleOAuthStart(url: URL, res: ServerResponse): Promise<void> {
     return;
   }
 
-  const clientCfg = await getOAuth2ClientConfig(adapter.service);
+  const clientCfg = await resolveOAuth2ClientConfig(adapter.auth, adapter.service);
   if (!clientCfg) {
     redirect(res, "/?error=" + encodeURIComponent("Set up the OAuth client for " + adapter.displayName + " first."));
     return;
@@ -228,6 +247,7 @@ async function main(): Promise<void> {
       if (req.method === "GET" && url.pathname === "/api/update-status") return handleUpdateStatus(res);
       if (req.method === "POST" && url.pathname === "/api/update") return handleUpdate(res);
       if (req.method === "POST" && url.pathname === "/api/oauth-config") return handleOAuthConfig(req, res);
+      if (req.method === "POST" && url.pathname === "/api/oauth-config/reset") return handleOAuthConfigReset(req, res);
       if (req.method === "GET" && url.pathname === "/oauth/start") return handleOAuthStart(url, res);
       if (req.method === "GET" && url.pathname === "/oauth/callback") return handleOAuthCallback(url, res);
       if (req.method === "POST" && url.pathname === "/api/apikey-account") return handleApiKeyAccount(req, res);

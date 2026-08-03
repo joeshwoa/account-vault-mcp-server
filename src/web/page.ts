@@ -131,6 +131,20 @@ export const PAGE_HTML = "<!doctype html>\n" +
 "        html += '<div class=\"row\" style=\"margin-top:14px\">' +\n" +
 "          '<input placeholder=\"label, e.g. work\" data-oauth-label=\"' + svc.service + '\" />' +\n" +
 "          '<button data-oauth-start=\"' + svc.service + '\">Connect ' + svc.displayName + '</button></div>';\n" +
+"\n" +
+"        if (svc.clientSource === 'shared-default') {\n" +
+"          html += '<p class=\"muted\" style=\"margin-top:8px\">Using the built-in shared client - Google shows an ' +\n" +
+"            '\"unverified app\" screen on sign-in (click Advanced, then \"Go to Account Vault\" - that is expected). ' +\n" +
+"            '<a href=\"#\" data-toggle-own=\"' + svc.service + '\">Use your own client instead</a></p>' +\n" +
+"            '<div data-own-form=\"' + svc.service + '\" style=\"display:none;margin-top:8px\">' +\n" +
+"            '<p class=\"desc\">Paste your own OAuth Client ID / Client Secret (see README.md) - removes the warning above and gives you your own quota.</p>' +\n" +
+"            '<div class=\"field\"><label>Client ID</label><input data-cfg-id=\"' + svc.service + '\" /></div>' +\n" +
+"            '<div class=\"field\"><label>Client Secret</label><input type=\"password\" data-cfg-secret=\"' + svc.service + '\" /></div>' +\n" +
+"            '<div class=\"row\"><button data-save-config=\"' + svc.service + '\">Save</button></div></div>';\n" +
+"        } else if (svc.clientSource === 'user' && svc.hasSharedDefault) {\n" +
+"          html += '<p class=\"muted\" style=\"margin-top:8px\">Using your own OAuth client. ' +\n" +
+"            '<a href=\"#\" data-reset-config=\"' + svc.service + '\">Switch back to the shared default</a></p>';\n" +
+"        }\n" +
 "      } else if (svc.authKind === 'apikey') {\n" +
 "        var fieldsHtml = svc.fields.map(function (f) {\n" +
 "          return '<div class=\"field\"><label>' + f.label + '</label><input type=\"' + (f.secret ? 'password' : 'text') +\n" +
@@ -164,6 +178,33 @@ export const PAGE_HTML = "<!doctype html>\n" +
 "          }).then(function () { location.reload(); });\n" +
 "        };\n" +
 "      })(removeButtons[i]);\n" +
+"    }\n" +
+"\n" +
+"    var toggleOwnLinks = document.querySelectorAll('[data-toggle-own]');\n" +
+"    for (var t = 0; t < toggleOwnLinks.length; t++) {\n" +
+"      (function (link) {\n" +
+"        link.onclick = function (ev) {\n" +
+"          ev.preventDefault();\n" +
+"          var service = link.getAttribute('data-toggle-own');\n" +
+"          var form = document.querySelector('[data-own-form=\"' + service + '\"]');\n" +
+"          form.style.display = form.style.display === 'none' ? 'block' : 'none';\n" +
+"        };\n" +
+"      })(toggleOwnLinks[t]);\n" +
+"    }\n" +
+"\n" +
+"    var resetConfigLinks = document.querySelectorAll('[data-reset-config]');\n" +
+"    for (var u = 0; u < resetConfigLinks.length; u++) {\n" +
+"      (function (link) {\n" +
+"        link.onclick = function (ev) {\n" +
+"          ev.preventDefault();\n" +
+"          var service = link.getAttribute('data-reset-config');\n" +
+"          if (!confirm('Switch ' + service + ' back to the shared default client? Your saved client stays deleted from this vault.')) return;\n" +
+"          fetch('/api/oauth-config/reset', {\n" +
+"            method: 'POST', headers: { 'Content-Type': 'application/json' },\n" +
+"            body: JSON.stringify({ service: service })\n" +
+"          }).then(function () { location.reload(); });\n" +
+"        };\n" +
+"      })(resetConfigLinks[u]);\n" +
 "    }\n" +
 "\n" +
 "    var saveConfigButtons = document.querySelectorAll('[data-save-config]');\n" +

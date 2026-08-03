@@ -109,6 +109,17 @@ say which one and that's a real, scoped thing to look into.
 
 ## One-time setup
 
+**If this build ships with a shared OAuth client already filled in** (check
+`src/adapters/gmail/shared-client.ts` — non-null means yes), skip straight to
+[Local control panel](#local-control-panel) and click "Connect Gmail." No Google Cloud
+Console step needed. You'll see Google's "unverified app" warning on sign-in (expected —
+click **Advanced → Go to Account Vault**) and you're sharing that client's ~100-account
+cap and API quota with everyone else using it; the panel has a "use your own client
+instead" option any time if you outgrow that.
+
+**If it doesn't ship one** (the common case for your own clone, before you fill it in),
+do steps 0–1 below once, yourself.
+
 ### 0. Get the code built
 
 Already have this exact folder (e.g. this is Joshua's original copy on the portable
@@ -128,7 +139,10 @@ Either way, if you ever change the source or pull updates, re-run `npm install &
 
 ### 1. Create a Google OAuth client (one-time, reused for every Gmail account you add)
 
-You only do this once — the same client ID/secret works for unlimited Gmail accounts.
+You only do this once — the same client ID/secret works for unlimited Gmail accounts. (If
+you're filling in `shared-client.ts` so *other* people using this build skip this step
+entirely, this is also the client you'd create for that — see the comments in that file
+for the tradeoffs of sharing one client across many people.)
 
 1. Go to [console.cloud.google.com](https://console.cloud.google.com/) and create a new
    project (any name).
@@ -192,11 +206,12 @@ Either way, this starts a small web page at `http://127.0.0.1:4790` (only reacha
 never exposed to your network) and opens it in your browser automatically. From there you
 can, without touching a terminal again:
 
-- Paste your Google OAuth Client ID/Secret (the one-time step from above), for Gmail or
-  any future OAuth2 adapter.
-- Connect a Gmail account — click "Connect Gmail," give it a label, and it sends you
-  through the normal Google sign-in in your browser, then brings you back with the
-  account added.
+- Connect a Gmail account immediately if this build ships a shared OAuth client (see
+  above) — click "Connect Gmail," give it a label, sign in, done. Each account's card
+  also shows a "use your own client instead" link if you'd rather not rely on the shared
+  one.
+- Otherwise, paste your own Google OAuth Client ID/Secret first (the one-time step
+  above), for Gmail or any future OAuth2 adapter — then "Connect Gmail" the same way.
 - Add an account for any API-key-based adapter — a plain form for whatever fields that
   service needs.
 - See every account currently configured, and remove any of them.

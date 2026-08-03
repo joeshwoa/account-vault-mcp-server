@@ -27,6 +27,34 @@ export async function saveOAuth2ClientConfig(service: string, clientId: string, 
   await writeConfig(config);
 }
 
+export async function clearOAuth2ClientConfig(service: string): Promise<void> {
+  const config = await readConfig();
+  delete config.oauthClients[service];
+  await writeConfig(config);
+}
+
+export interface ResolvedOAuth2Client extends OAuth2ClientConfig {
+  /** "user" if this came from something the user saved themselves; "shared-default" if it's
+   *  falling back to the adapter's built-in shared client (see each adapter's auth.defaultClient). */
+  source: "user" | "shared-default";
+}
+
+/**
+ * Resolves which OAuth client to actually use for a service: whatever the user saved
+ * themselves always wins, falling back to the adapter's built-in shared default (if it ships
+ * one) so accounts can be added with zero Google-Cloud-console setup. Returns null if neither
+ * exists yet — same as before this fallback existed.
+ */
+export async function resolveOAuth2ClientConfig(
+  auth: OAuth2AuthHooks,
+  service: string
+): Promise<ResolvedOAuth2Client | null> {
+  const userCfg = await getOAuth2ClientConfig(service);
+  if (userCfg) return { ...userCfg, source: "user" };
+  if (auth.defaultClient) return { ...auth.defaultClient, source: "shared-default" };
+  return null;
+}
+
 /**
  * Finishes an OAuth2 "add account" flow. Called once whoever orchestrated the browser round
  * trip (CLI or web panel) already has a token response and an authenticated client.

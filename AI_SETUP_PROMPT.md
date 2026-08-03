@@ -38,17 +38,23 @@ needs a decision or my credentials — don't run ahead on your own.
    valid JSON. Then tell me to fully quit and reopen that app (for Claude Desktop:
    Cmd+Q, not just closing the window).
 
-4. Ask whether I already have a Google Cloud OAuth Client ID and Secret for this. If not,
-   walk me through README.md's "Create a Google OAuth client" section one step at a time —
-   pause after each step and wait for me to confirm I've done it, since it involves my
-   Google account and I need to click through it myself. Never ask me for a password —
-   only the Client ID and Client Secret at the very end of that process.
+4. Check `src/adapters/gmail/shared-client.ts` yourself first. If `SHARED_GMAIL_CLIENT`
+   is already filled in (not `null`), this build has zero-setup Gmail sign-in built in —
+   skip straight to step 5, no need to ask me anything here. Only if it's `null`: ask
+   whether I already have a Google Cloud OAuth Client ID and Secret. If not, walk me
+   through README.md's "Create a Google OAuth client" section one step at a time — pause
+   after each step and wait for me to confirm I've done it, since it involves my Google
+   account and I need to click through it myself. Never ask me for a password — only the
+   Client ID and Client Secret at the very end of that process.
 
 5. Run `npm run panel`. This opens a page in my browser at http://127.0.0.1:4790 — from
-   here, hand off to me directly: I'll paste the Client ID/Secret into the page myself,
-   then click "Connect Gmail" to log into each account I want (I can add more than one,
-   one at a time). Wait for me to say I've added at least one account before continuing —
-   don't try to do this part for me, it needs my own browser sign-in.
+   here, hand off to me directly: if you skipped step 4 above, "Connect Gmail" already
+   works with no client info needed; otherwise I'll paste the Client ID/Secret into the
+   page myself first. Either way I'll click "Connect Gmail" to log into each account I
+   want (I can add more than one, one at a time), and Google will show an "unverified
+   app" warning that's expected — I'll click through it myself. Wait for me to say I've
+   added at least one account before continuing — don't try to do this part for me, it
+   needs my own browser sign-in.
 
 6. Help me confirm the connection worked: for Claude Code, run `claude mcp list` yourself
    and show me the result. For Claude Desktop or Cursor, there's no command-line check —

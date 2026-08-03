@@ -64,6 +64,14 @@ export interface OAuth2AuthHooks {
   kind: "oauth2";
   /** Scopes requested during the consent screen. */
   scopes: string[];
+  /**
+   * Optional shared OAuth client this adapter ships with, used automatically when the user
+   * hasn't configured their own — lets accounts be added with zero Google-Cloud-console (or
+   * equivalent) setup. Whatever the user saves themselves always takes priority over this;
+   * see `resolveOAuth2ClientConfig` in vault/accounts.ts. Leave unset to require every user
+   * to configure their own client, same as before this existed.
+   */
+  defaultClient?: { clientId: string; clientSecret: string };
   createClient(clientId: string, clientSecret: string, redirectUri: string): OAuth2Client;
   /** Turn the token response from the provider into this adapter's SecretBlob shape. */
   toSecret(tokens: {

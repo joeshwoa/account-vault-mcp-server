@@ -3,6 +3,7 @@ import { google } from "googleapis";
 import type { Adapter } from "../../types.js";
 import { GMAIL_SCOPES } from "./client.js";
 import { gmailTools } from "./tools.js";
+import { SHARED_GMAIL_CLIENT } from "./shared-client.js";
 
 export const gmailAdapter: Adapter = {
   service: "gmail",
@@ -10,6 +11,7 @@ export const gmailAdapter: Adapter = {
   auth: {
     kind: "oauth2",
     scopes: GMAIL_SCOPES,
+    defaultClient: SHARED_GMAIL_CLIENT ?? undefined,
     createClient(clientId, clientSecret, redirectUri) {
       return new OAuth2Client(clientId, clientSecret, redirectUri);
     },

@@ -7,7 +7,7 @@ import { readAccounts } from "./vault/store.js";
 import { assertMacKeychainSupport } from "./vault/keychain.js";
 import { checkForUpdates, applyUpdate } from "./vault/update.js";
 import {
-  getOAuth2ClientConfig,
+  resolveOAuth2ClientConfig,
   saveOAuth2ClientConfig,
   storeOAuth2Account,
   storeApiKeyAccount,
@@ -147,13 +147,17 @@ async function cmdConfig(service: string, clientId: string, clientSecret: string
 }
 
 async function addOAuth2Account(auth: OAuth2AuthHooks, service: string, displayName: string, label: string): Promise<void> {
-  const clientCfg = await getOAuth2ClientConfig(service);
+  const clientCfg = await resolveOAuth2ClientConfig(auth, service);
   if (!clientCfg) {
     throw new Error(
-      `No OAuth client configured for "${service}" yet. Run:\n` +
+      `No OAuth client configured for "${service}" yet, and this build doesn't ship a shared ` +
+        `default for it either. Run:\n` +
         `  node dist/cli.js config ${service} <client_id> <client_secret>\n` +
         `first (see README.md for how to create these in Google Cloud Console).`
     );
+  }
+  if (clientCfg.source === "shared-default") {
+    console.log(`Using the built-in shared OAuth client for "${service}" (no setup needed).`);
   }
 
   const client = auth.createClient(clientCfg.clientId, clientCfg.clientSecret, REDIRECT_URI);
