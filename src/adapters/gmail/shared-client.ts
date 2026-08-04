@@ -24,4 +24,7 @@
  * then fill in its values below. Leave both as null to disable the shared default entirely
  * — every user will then need to configure their own, exactly like before this existed.
  */
-export const SHARED_GMAIL_CLIENT: { clientId: string; clientSecret: string } | null = null;
+export const SHARED_GMAIL_CLIENT: { clientId: string; clientSecret: string } | null = {
+  clientId: "664637649840-f1v6ev6p94ra2n7apq3smuhflbninp99.apps.googleusercontent.com",
+  clientSecret: "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",
+};
