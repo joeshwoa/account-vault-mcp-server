@@ -38,14 +38,28 @@ needs a decision or my credentials — don't run ahead on your own.
    valid JSON. Then tell me to fully quit and reopen that app (for Claude Desktop:
    Cmd+Q, not just closing the window).
 
-4. Check `src/adapters/gmail/shared-client.ts` yourself first. If `SHARED_GMAIL_CLIENT`
-   is already filled in (not `null`), this build has zero-setup Gmail sign-in built in —
-   skip straight to step 5, no need to ask me anything here. Only if it's `null`: ask
-   whether I already have a Google Cloud OAuth Client ID and Secret. If not, walk me
-   through README.md's "Create a Google OAuth client" section one step at a time — pause
-   after each step and wait for me to confirm I've done it, since it involves my Google
-   account and I need to click through it myself. Never ask me for a password — only the
-   Client ID and Client Secret at the very end of that process.
+4. Read `src/adapters/gmail/shared-client.ts` yourself (just read it — safe, no need to
+   ask me first) to check whether `SHARED_GMAIL_CLIENT` is filled in.
+
+   **If it's filled in (not `null`):** tell me there are two ways to connect Gmail, using
+   this exact framing, then ask which I want — don't decide for me and don't skip asking
+   just because a fast path exists:
+     - **Zero setup (shared client):** works immediately, nothing for me to do in Google
+       Cloud Console. Tradeoffs: every sign-in shows Google's "unverified app" warning
+       (expected — I just click through it), and I'm sharing that client's roughly
+       100-account cap and API quota with everyone else using this build.
+     - **My own client:** a few minutes in Google Cloud Console, one time, but it's mine
+       alone — no shared cap, no shared quota, and no warning once I verify it with
+       Google (verification is optional and separate from this setup).
+   If I pick zero setup, skip straight to step 5. If I pick my own, walk me through
+   README.md's "Create a Google OAuth client" section one step at a time as described
+   below.
+
+   **If it's `null`:** there's no zero-setup option in this particular build yet — tell me
+   that plainly, then walk me through README.md's "Create a Google OAuth client" section
+   one step at a time, pausing after each step for me to confirm I've done it, since it
+   needs my own Google account and browser. Never ask me for a password — only the Client
+   ID and Client Secret at the very end of that process.
 
 5. Run `npm run panel`. This opens a page in my browser at http://127.0.0.1:4790 — from
    here, hand off to me directly: if you skipped step 4 above, "Connect Gmail" already
